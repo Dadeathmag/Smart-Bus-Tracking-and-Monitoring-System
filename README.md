@@ -1,4 +1,7 @@
 # Smart Bus Tracking and Monitoring System
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A college bus surveillance and attendance system that uses the driver's smartphone for face recognition, GPS tracking, and cloud-backed records. The admin web dashboard lets staff manage buses, students, drivers, routes, fees, and attendance in one place.
 
@@ -199,3 +202,18 @@ This project is licensed under the [MIT License](LICENSE).
 ## Contributors
 
 Group 6 — Smart Bus Tracking and Monitoring System (see `abstract/main.tex` for team details).
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dadeathmag"><img src="https://avatars.githubusercontent.com/u/169537350?v=4?s=100" width="100px;" alt="Dadeathmag"/><br /><sub><b>Dadeathmag</b></sub></a><br /><a href="#design-Dadeathmag" title="Design">🎨</a> <a href="https://github.com/Dadeathmag/Smart-Bus-Tracking-and-Monitoring-System/commits?author=Dadeathmag" title="Documentation">📖</a> <a href="#data-Dadeathmag" title="Data">🔣</a> <a href="#infra-Dadeathmag" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
