@@ -12,6 +12,15 @@ A college bus surveillance and attendance system that uses the driver's smartpho
 
 Manual roll calls and paper logs are slow and error-prone. This project automates bus attendance by recognizing students onboard (via a mobile app) and logging boarding and departure events with real-time location data. A Flask admin portal connects to Firebase for authentication, Firestore data, and Realtime Database tracking.
 
+## Project status
+
+| Component | Status | Notes |
+|-----------|--------|--------|
+| Admin web (`admin_web/`) | **Completed** | Flask dashboard, Firebase auth, buses, students, drivers, attendance, fees |
+| Design & documentation | **Completed** | Diagrams, LaTeX/PDF docs, `docs/images/`, `final/` deliverables |
+| Database (Firebase) | **Completed** | Firestore + Realtime Database schema and integration |
+| Flutter mobile app | **To be updated** | Driver face recognition & GPS app — planned, not in this repo yet |
+
 ## Features
 
 ### Admin web (`admin_web/`)
@@ -50,7 +59,7 @@ Manual roll calls and paper logs are slow and error-prone. This project automate
 | Database | Firebase Firestore, Realtime Database |
 | Auth | Firebase Authentication (session cookies) |
 | Face recognition (mobile) | TensorFlow Lite, MediaPipe, OpenCV |
-| Mobile app (planned / separate) | Flutter |
+| Mobile app | Flutter *(to be updated — not included in repository yet)* |
 
 ## System design
 
