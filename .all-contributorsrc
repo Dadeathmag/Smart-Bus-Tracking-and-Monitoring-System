@@ -18,6 +18,15 @@
         "data",
         "infra"
       ]
+    },
+    {
+      "login": "Akashvg2005",
+      "name": "Akash V G",
+      "avatar_url": "https://avatars.githubusercontent.com/u/199903337?v=4",
+      "profile": "https://github.com/Akashvg2005",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
