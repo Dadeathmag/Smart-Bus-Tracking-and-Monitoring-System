@@ -1,6 +1,6 @@
 # Smart Bus Tracking and Monitoring System
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 A college bus surveillance and attendance system that uses the driver's smartphone for face recognition, GPS tracking, and cloud-backed records. The admin web dashboard lets staff manage buses, students, drivers, routes, fees, and attendance in one place.
@@ -210,6 +210,7 @@ Group 6 — Smart Bus Tracking and Monitoring System (see `abstract/main.tex` fo
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dadeathmag"><img src="https://avatars.githubusercontent.com/u/169537350?v=4?s=100" width="100px;" alt="Dadeathmag"/><br /><sub><b>Dadeathmag</b></sub></a><br /><a href="#design-Dadeathmag" title="Design">🎨</a> <a href="https://github.com/Dadeathmag/Smart-Bus-Tracking-and-Monitoring-System/commits?author=Dadeathmag" title="Documentation">📖</a> <a href="#data-Dadeathmag" title="Data">🔣</a> <a href="#infra-Dadeathmag" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Akashvg2005"><img src="https://avatars.githubusercontent.com/u/199903337?v=4?s=100" width="100px;" alt="Akash V G"/><br /><sub><b>Akash V G</b></sub></a><br /><a href="https://github.com/Dadeathmag/Smart-Bus-Tracking-and-Monitoring-System/commits?author=Akashvg2005" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Nithya-Manoj"><img src="https://avatars.githubusercontent.com/u/217149649?v=4?s=100" width="100px;" alt="Nithya-Manoj"/><br /><sub><b>Nithya-Manoj</b></sub></a><br /><a href="https://github.com/Dadeathmag/Smart-Bus-Tracking-and-Monitoring-System/commits?author=Nithya-Manoj" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
