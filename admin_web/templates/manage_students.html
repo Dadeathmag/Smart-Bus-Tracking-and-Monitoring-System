@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Manage Students</h2>
+
+<form method="GET" action="/admin/students/manage" style="margin-bottom: 14px;">
+    <label for="bus_id" style="margin-right: 8px;">Filter by bus:</label>
+    <select id="bus_id" name="bus_id" onchange="this.form.submit()">
+        <option value="" {% if not selected_bus_id %}selected{% endif %}>All buses</option>
+        {% for bus in buses %}
+            <option value="{{ bus.id }}" {% if selected_bus_id == bus.id %}selected{% endif %}>
+                {{ bus.bus_number }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+<table class="bus-table">
+    <thead>
+        <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Admission No</th>
+            <th>Bus</th>
+            <th>Parent Phone</th>
+            <th>Status</th>
+            <th>Actions</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% if students|length == 0 %}
+            <tr>
+                <td colspan="8" style="text-align:center; opacity:0.8;">
+                    No students found for selected bus.
+                </td>
+            </tr>
+        {% else %}
+            {% for student_id, student in students %}
+            <tr>
+                <td>
+                    {% if student.photoBase64 %}
+                        <img src="{{ student.photoBase64 }}" width="50" height="50"
+                        style="border-radius:50%; object-fit:cover;">
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.admission_number }}</td>
+                <td>{{ student.bus_no }}</td>
+                <td>{{ student.parent_phone_number }}</td>
+                <td>{{ student.status }}</td>
+                <td>
+                    <a href="/admin/students/manage/{{ student_id }}" 
+                    class="manage-btn">
+                        Manage
+                    </a>
+                </td>
+                <td>
+                    <form method="POST" 
+                        action="/admin/students/delete/{{ student_id }}"
+                        onsubmit="return confirm('Are you sure you want to delete this student?');">
+                        <button type="submit" class="delete-btn">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        {% endif %}
+    </tbody>
+</table>
+
+{% endblock %}

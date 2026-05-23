@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+serviceKey.json
+**/serviceKey.json
+
+# Firebase / credentials
+*-firebase-adminsdk-*.json
+credentials.json
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local backups
+backup.zip

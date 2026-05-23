@@ -1,0 +1,730 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="bus-layout">
+
+    <!-- LEFT COLUMN -->
+    <div class="bus-left">
+        <h2>Manage Bus</h2>
+        <form method="POST"
+        action="{{ url_for('bus_bp.update_bus_route', bus_id=bus.id) }}"
+        class="detail-card"
+        enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" value="{{ bus.name }}">
+            </div>
+
+            <div class="form-group">
+                <label>Bus Number</label>
+                <input type="text" name="bus_number" value="{{ bus.bus_number }}">
+            </div>
+
+            <div class="form-group">
+                <label>Student Limit</label>
+                <input type="number" name="student_limit" value="{{ bus.student_limit }}">
+            </div>
+
+            <div class="form-group">
+                <label>Bus Permit Image</label>
+
+                {% if bus.permit_photo_base64 %}
+                    <div class="permit-preview">
+                        <img src="{{ bus.permit_photo_base64 }}">
+                    </div>
+                {% endif %}
+
+                <div class="permit-upload-wrapper">
+                    <label class="permit-upload-btn">
+                        Change Permit
+                        <input type="file" name="permit_photo" accept="image/*">
+                    </label>
+
+                    <span class="permit-note">
+                        Leave empty to keep existing permit.
+                    </span>
+                </div>
+            </div>
+
+
+            <div class="form-group driver-row">
+                <label>Assigned Driver</label>
+
+                <div class="driver-display">
+                    {% if bus.assigned_driver_name %}
+                        <span class="driver-badge">
+                            👤 {{ bus.assigned_driver_name }}
+                        </span>
+
+                        <button type="button"
+                                class="unassign-btn"
+                                onclick="unassignDriver('{{ bus.id }}')">
+                            ✖
+                        </button>
+                    {% else %}
+                        <span class="readonly-field empty">
+                            Not Assigned
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+
+
+            <div class="form-group">
+                <label>Status</label>
+                {% if bus.status == "active" %}
+                    <span class="status-badge active">Active</span>
+                {% else %}
+                    <span class="status-badge inactive">Inactive</span>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="update-btn">Update Bus</button>
+        </form>
+        
+        <div class="card-container">
+            <a href="#" class="module-card" onclick="toggleSection('students')">
+                View Students
+            </a>
+            <a href="#" class="module-card" onclick="toggleSection('driver')">
+                Assign Driver
+            </a>
+        </div>
+
+        <!-- 🔽 Dynamic Section Appears Here -->
+        <div id="busOptionContent" class="bus-option-content" style="display:none;">
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="bus-right">
+        <h2>Manage Route</h2>
+
+        <div class="route-toggle">
+            <button id="morningBtn" class="active" onclick="switchRoute('morning')">
+                🌅 Morning
+            </button>
+            <button id="eveningBtn" onclick="switchRoute('evening')">
+                🌇 Evening
+            </button>
+        </div>
+
+        <div class="route-card">
+
+            <div id="morningSection">
+                <div id="routeMap"></div>
+                <div class="stop-panel">
+                    <h4>Morning Stops</h4>
+                    <ul id="stopList"></ul>
+                    <button onclick="saveRoute('morning')" class="save-route-btn">
+                        💾 Save Morning Route
+                    </button>
+                </div>
+            </div>
+
+            <div id="eveningSection" style="display:none;">
+                <div id="routeMapEvening"></div>
+                <div class="stop-panel">
+                    <h4>Evening Stops</h4>
+                    <ul id="stopListEvening"></ul>
+                    <button onclick="saveRoute('evening')" class="save-route-btn">
+                        💾 Save Evening Route
+                    </button>
+                </div>
+            </div>
+
+            <!-- Used by JS to center the maps (config/college_location) -->
+            <div id="collegeLocation"
+                 data-lat="{{ college_lat }}"
+                 data-lng="{{ college_lng }}"
+                 style="display:none;"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{% block scripts %}
+
+<script>
+document.querySelector('input[name="permit_photo"]')
+.addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let preview = document.querySelector(".permit-preview");
+
+        if (!preview) {
+            preview = document.createElement("div");
+            preview.className = "permit-preview";
+            event.target.closest(".form-group")
+                        .insertBefore(preview, event.target.parentNode);
+        }
+
+        preview.innerHTML = `<img src="${e.target.result}">`;
+    };
+    reader.readAsDataURL(file);
+});
+</script>
+
+<script>
+    function unassignDriver(busId) {
+
+        if (!confirm("Are you sure you want to unassign this driver?"))
+            return;
+
+        fetch(`/admin/buses/manage/${busId}/unassign-driver`, {
+            method: "POST"
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+    }
+</script>
+
+<script>
+function toggleSection(type) {
+
+    const container = document.getElementById("busOptionContent");
+
+    if (container.style.display === "block" && container.dataset.active === type) {
+        container.style.display = "none";
+        container.dataset.active = "";
+        container.innerHTML = "";
+        return;
+    }
+
+    container.style.display = "block";
+    container.dataset.active = type;
+
+    if (type === "students") {
+        container.innerHTML = `
+            <div class="option-body">
+                <h3>Students Assigned</h3>
+                <p>Student list will load here...</p>
+                <div id="studentsLoading" class="muted">Loading...</div>
+                <div id="studentsList" style="margin-top: 12px;"></div>
+            </div>
+        `;
+
+        // Load students assigned to this bus.
+        fetch(`/admin/students/by-bus/{{ bus.id }}`)
+            .then(res => res.json())
+            .then(students => {
+                const loading = document.getElementById("studentsLoading");
+                if (loading) loading.remove();
+
+                const list = document.getElementById("studentsList");
+                if (!list) return;
+
+                if (!students || students.length === 0) {
+                    list.innerHTML = `<p class="muted">No students assigned to this bus.</p>`;
+                    return;
+                }
+
+                list.innerHTML = students.map(s => `
+                    <a class="student-link"
+                       href="/admin/students/manage/${s.id}"
+                       style="display:block; text-decoration:none; color:inherit; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:8px;">
+                        <div style="font-weight:600;">${s.name || "Unnamed"}</div>
+                        <div style="opacity:0.8; font-size: 13px;">${s.admission_number || ""}</div>
+                    </a>
+                `).join("");
+            })
+            .catch(err => {
+                console.error("Error loading students:", err);
+                const loading = document.getElementById("studentsLoading");
+                if (loading) loading.textContent = "Failed to load students.";
+            });
+    }
+
+    if (type === "driver") {
+        container.innerHTML = `
+            <div class="driver-wrapper">
+
+                <div class="driver-card">
+                    <h3>👤 Select Existing Driver</h3>
+
+                    <select id="driverSelect" class="driver-input">
+                        <option value="">Loading drivers...</option>
+                    </select>
+
+                    <button onclick="assignSelectedDriver()" class="primary-btn">
+                        Assign Driver
+                    </button>
+                </div>
+
+                <div class="driver-card">
+                    <h3>➕ Add New Driver</h3>
+
+                    <input type="text" id="newDriverName"
+                        class="driver-input1"
+                        placeholder="Driver Name">
+
+                    <input type="text" id="newDriverPhone"
+                        class="driver-input1"
+                        placeholder="Phone Number">
+
+                    <input type="email" id="newDriverEmail"
+                        class="driver-input1"
+                        placeholder="Driver Email"
+                        required>
+
+                    <input type="password" id="newDriverPassword"
+                        class="driver-input1"
+                        placeholder="Driver Password"
+                        required>
+
+                    <button onclick="addNewDriver()" class="success-btn">
+                        Add Driver
+                    </button>
+                </div>
+
+            </div>
+        `;
+        loadDrivers();
+        
+    }
+}
+
+function loadDrivers() {
+
+    fetch("/admin/drivers/list")
+        .then(res => res.json())
+        .then(drivers => {
+
+            const select = document.getElementById("driverSelect");
+            select.innerHTML = '<option value="">Select Driver</option>';
+
+            drivers.forEach(driver => {
+                select.innerHTML += `
+                    <option value="${driver.id}">
+                        ${driver.name} (${driver.phone})
+                    </option>
+                `;
+            });
+        });
+}
+
+function addNewDriver() {
+
+    const name = document.getElementById("newDriverName").value;
+    const phone = document.getElementById("newDriverPhone").value;
+    const email = document.getElementById("newDriverEmail").value;
+    const password = document.getElementById("newDriverPassword").value;
+
+    if (!name || !phone || !email || !password) {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    fetch("/admin/drivers/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name,
+            phone: phone,
+            email: email,
+            password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        loadDrivers();  // refresh dropdown
+    });
+}
+
+function assignSelectedDriver() {
+
+    const driverId = document.getElementById("driverSelect").value;
+
+    if (!driverId) {
+        alert("Please select a driver.");
+        return;
+    }
+
+    fetch(`/admin/buses/manage/{{ bus.id }}/assign-driver`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            driver_id: driverId
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        location.reload();
+    });
+}
+</script>
+
+<script>
+    async function getLocationName(lat, lng) {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+            );
+
+            const data = await response.json();
+
+            return (
+                data.address?.road ||
+                data.address?.suburb ||
+                data.address?.neighbourhood ||
+                data.display_name?.split(",")[0] ||
+                "Unnamed Stop"
+            );
+
+        } catch (error) {
+            console.error("Geocode error:", error);
+            return "Unnamed Stop";
+        }
+    }
+
+    let morningStops = [];
+    let eveningStops = [];
+    let morningMap;
+    let eveningMap;
+    
+    function renderStopList(stopArray, listId) {
+
+        const list = document.getElementById(listId);
+        list.innerHTML = "";
+
+        stopArray.forEach((stop, index) => {
+
+            const li = document.createElement("li");
+
+            li.innerHTML = `
+                <strong>Stop ${index + 1}</strong><br>
+
+                <label>Stop Name</label>
+                <input type="text"
+                    value="${stop.name}"
+                    oninput="updateStopName(${index}, this.value, '${listId}')"
+                    placeholder="Enter stop name">
+
+                <label class="radius-label">Radius: ${stop.radius}m</label>
+                <input type="range"
+                    min="50"
+                    max="2000"
+                    step="10"
+                    value="${stop.radius}"
+                    oninput="updateRadius(${index}, this.value, '${listId}')">
+
+                <label>Fee (₹)</label>
+                <input type="number"
+                    min="0"
+                    value="${stop.fee}"
+                    oninput="updateFee(${index}, this.value, '${listId}')"
+                    placeholder="Enter stop fee">
+
+                <button onclick="removeStop(${index}, '${listId}')">
+                    Remove
+                </button>
+            `;
+
+            list.appendChild(li);
+            const newNumber = index + 1;
+
+            stop.marker.setIcon(
+                L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div class="marker-number">${newNumber}</div>`,
+                    iconSize: [30, 30]
+        })
+    );
+        });
+    }
+
+    function loadRoute(type) {
+
+        fetch(`/admin/buses/manage/{{ bus.id }}/get-route/${type}`)
+            .then(response => response.json())
+            .then(data => {
+
+                const stops = data.stops;
+                if (!stops || stops.length === 0) return;
+
+                const map = type === "morning" ? morningMap : eveningMap;
+                const stopArray = type === "morning" ? morningStops : eveningStops;
+                const listId = type === "morning" ? "stopList" : "stopListEvening";
+
+                stops.forEach(stopData => {
+
+                    const latlng = L.latLng(stopData.latitude, stopData.longitude);
+
+                    const marker = L.marker(latlng, { draggable: true }).addTo(map);
+                    const circle = L.circle(latlng, { radius: stopData.radius }).addTo(map);
+
+                    const stop = {
+                        latitude: stopData.latitude,
+                        longitude: stopData.longitude,
+                        name: stopData.name,
+                        radius: stopData.radius,
+                        fee: stopData.fee || 0,
+                        marker: marker,
+                        circle: circle
+                    };
+
+                    stopArray.push(stop);
+
+                    marker.on('dragend', function(e) {
+                        const newPos = e.target.getLatLng();
+                        stop.latitude = newPos.lat;
+                        stop.longitude = newPos.lng;
+                        stop.circle.setLatLng(newPos);
+                    });
+                });
+
+                renderStopList(stopArray, listId);
+            })
+            .catch(error => console.error("Load route error:", error));
+    }
+
+
+    window.updateStopName = function(index, value, listId) {
+
+        const arr = listId === "stopList" ? morningStops : eveningStops;
+
+        arr[index].name = value;
+
+        // 👇 Once manually edited, stop auto renaming
+        arr[index].autoNamed = false;
+    };
+
+    window.updateRadius = function(index, value, listId) {
+
+        const arr = listId === "stopList" ? morningStops : eveningStops;
+
+        arr[index].radius = parseInt(value);
+
+        // Update circle radius
+        arr[index].circle.setRadius(parseInt(value));
+
+        // Update only the label text (no full re-render)
+        const list = document.getElementById(listId);
+        const item = list.children[index];
+
+        const label = item.querySelector(".radius-label");
+        label.textContent = "Radius: " + value + "m";
+    };
+
+    /* ---------- REMOVE STOP ---------- */
+
+    window.removeStop = function(index, listId) {
+
+        let arr;
+
+        if (listId === "stopList") {
+            arr = morningStops;
+        } else {
+            arr = eveningStops;
+        }
+
+        // Remove marker
+        arr[index].marker.remove();
+
+        // Remove circle
+        arr[index].circle.remove();
+
+        // Remove from array
+        arr.splice(index, 1);
+
+        renderStopList(arr, listId);
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // College map center (from config/college_location).
+        const collegeLocationEl = document.getElementById("collegeLocation");
+        const collegeLat = collegeLocationEl ? parseFloat(collegeLocationEl.dataset.lat) : 12.9716;
+        const collegeLng = collegeLocationEl ? parseFloat(collegeLocationEl.dataset.lng) : 77.5946;
+        // Fallback if values are missing/invalid
+        const safeCollegeLat = Number.isFinite(collegeLat) ? collegeLat : 12.9716;
+        const safeCollegeLng = Number.isFinite(collegeLng) ? collegeLng : 77.5946;
+
+
+        /* ---------- MORNING MAP ---------- */
+
+        morningMap = L.map('routeMap').setView([safeCollegeLat, safeCollegeLng], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(morningMap);
+
+        // Mark configured college location for reference.
+        L.circleMarker([safeCollegeLat, safeCollegeLng], {
+            radius: 10,
+            color: "#16a34a",
+            fillColor: "#16a34a",
+            fillOpacity: 0.25,
+            weight: 2,
+        }).addTo(morningMap).bindPopup("College");
+
+        morningMap.on('click', function(e) {
+            addStop(e.latlng, morningMap, morningStops, "stopList");
+        });
+
+        /* ---------- EVENING MAP ---------- */
+
+        eveningMap = L.map('routeMapEvening').setView([safeCollegeLat, safeCollegeLng], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(eveningMap);
+
+        // Mark configured college location for reference.
+        L.circleMarker([safeCollegeLat, safeCollegeLng], {
+            radius: 10,
+            color: "#16a34a",
+            fillColor: "#16a34a",
+            fillOpacity: 0.25,
+            weight: 2,
+        }).addTo(eveningMap).bindPopup("College");
+
+        eveningMap.on('click', function(e) {
+            addStop(e.latlng, eveningMap, eveningStops, "stopListEvening");
+        });
+
+        /* ---------- LOAD ROUTE ---------- */
+        loadRoute("morning");
+        loadRoute("evening");
+
+        /* ---------- SWITCH FUNCTION ---------- */
+
+        window.switchRoute = function(type) {
+
+            document.getElementById("morningSection").style.display =
+                type === "morning" ? "block" : "none";
+
+            document.getElementById("eveningSection").style.display =
+                type === "evening" ? "block" : "none";
+
+            document.getElementById("morningBtn").classList.toggle("active", type === "morning");
+            document.getElementById("eveningBtn").classList.toggle("active", type === "evening");
+
+            setTimeout(() => {
+                if (type === "morning") {
+                    morningMap.invalidateSize();
+                } else {
+                    eveningMap.invalidateSize();
+                }
+            }, 200);
+        };
+
+        /* ---------- ADD STOP ---------- */
+
+        async function addStop(latlng, map, stopArray, listId) {
+
+            const stopNumber = stopArray.length + 1;
+
+            const marker = L.marker(latlng, {
+                draggable: true,
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div class="marker-number">${stopNumber}</div>`,
+                    iconSize: [30, 30]
+                })
+            }).addTo(map);
+
+            const stop = {
+                latitude: latlng.lat,
+                longitude: latlng.lng,
+                name: "Loading location...",   // temporary
+                radius: 100,
+                fee: 0,
+                autoNamed: true,               // 👈 important flag
+                marker: marker,
+                circle: L.circle(latlng, { radius: 100 }).addTo(map)
+            };
+
+            stopArray.push(stop);
+            renderStopList(stopArray, listId);
+
+            // Fetch location name
+            const autoName = await getLocationName(latlng.lat, latlng.lng);
+            stop.name = autoName;
+
+            renderStopList(stopArray, listId);
+
+            marker.on('dragend', async function(e) {
+
+                const newPos = e.target.getLatLng();
+                stop.latitude = newPos.lat;
+                stop.longitude = newPos.lng;
+                stop.circle.setLatLng(newPos);
+
+                // Only auto-update name IF admin hasn't manually edited it
+                if (stop.autoNamed) {
+                    stop.name = await getLocationName(newPos.lat, newPos.lng);
+                    renderStopList(stopArray, listId);
+                }
+            });
+        }
+
+        window.updateFee = function(index, value, listId) {
+            const arr = listId === "stopList" ? morningStops : eveningStops;
+            arr[index].fee = parseInt(value) || 0;
+        };
+
+        // save stops
+        window.saveRoute = function(type) {
+
+            const stops = type === "morning" ? morningStops : eveningStops;
+
+            if (stops.length === 0) {
+                alert("Add at least one stop before saving.");
+                return;
+            }
+
+            const cleanedStops = stops.map(stop => ({
+                name: stop.name || "",
+                latitude: stop.latitude,
+                longitude: stop.longitude,
+                radius: stop.radius,
+                fee: stop.fee || 0   
+            }));
+
+            fetch(`/admin/buses/manage/{{ bus.id }}/save-route`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    type: type,
+                    stops: cleanedStops
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || "Route saved successfully");
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error saving route");
+            });
+        };
+
+    });
+
+    
+</script>
+{% endblock %}
+
+{% endblock %}

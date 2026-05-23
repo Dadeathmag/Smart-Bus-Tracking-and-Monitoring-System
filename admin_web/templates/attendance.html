@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Attendance</h2>
+
+<form method="GET" action="/admin/attendance" class="detail-card" style="margin-bottom: 16px;">
+    <div class="form-group">
+        <label for="attendance_date">Select Date</label>
+        <input id="attendance_date" type="date" name="date" value="{{ selected_date }}" required>
+    </div>
+    <button type="submit" class="update-btn">Load Attendance</button>
+</form>
+
+<div class="detail-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="margin:0;">Records for {{ selected_date }}</h3>
+        <span class="status-badge active">Total: {{ total_count }}</span>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="status-badge active">Morning: {{ morning_count }}</span>
+        <span class="status-badge inactive">Evening: {{ evening_count }}</span>
+    </div>
+
+    {% if morning_rows %}
+    <h4 style="margin:0 0 8px 0;">Morning Attendance</h4>
+    <div style="overflow-x:auto; margin-bottom:14px;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#f3f4f6;">
+                    <th style="padding:10px;">Student</th>
+                    <th style="padding:10px;">Admission No</th>
+                    <th style="padding:10px;">Bus</th>
+                    <th style="padding:10px;">Status</th>
+                    <th style="padding:10px;">Marked At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in morning_rows %}
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:10px;">{{ row.student_name }}</td>
+                    <td style="padding:10px;">{{ row.admission_number }}</td>
+                    <td style="padding:10px;">{{ row.bus_no }}</td>
+                    <td style="padding:10px;">{{ row.status }}</td>
+                    <td style="padding:10px;">{{ row.marked_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted" style="margin:0 0 12px 0;">No morning attendance records found for this date.</p>
+    {% endif %}
+
+    {% if evening_rows %}
+    <h4 style="margin:0 0 8px 0;">Evening Attendance</h4>
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="text-align:left; background:#f3f4f6;">
+                    <th style="padding:10px;">Student</th>
+                    <th style="padding:10px;">Admission No</th>
+                    <th style="padding:10px;">Bus</th>
+                    <th style="padding:10px;">Status</th>
+                    <th style="padding:10px;">Marked At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in evening_rows %}
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:10px;">{{ row.student_name }}</td>
+                    <td style="padding:10px;">{{ row.admission_number }}</td>
+                    <td style="padding:10px;">{{ row.bus_no }}</td>
+                    <td style="padding:10px;">{{ row.status }}</td>
+                    <td style="padding:10px;">{{ row.marked_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted" style="margin:0;">No evening attendance records found for this date.</p>
+    {% endif %}
+</div>
+{% endblock %}

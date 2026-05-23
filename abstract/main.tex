@@ -1,0 +1,107 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{titling}
+\usepackage{enumitem}
+% --- Tighter margins for 2-page fit ---
+\geometry{
+ a4paper,
+ left=0.9in,
+ right=0.9in,
+ top=0.9in,
+ bottom=0.9in
+}
+\setlength{\droptitle}{-9em}
+% --- Tighter spacing ---
+\setstretch{1.12}
+
+% --- Reduce spacing before/after section titles ---
+\titlespacing*{\section}{0pt}{4pt}{4pt}
+
+% --- Reduce paragraph spacing ---
+\setlength{\parskip}{6pt}
+
+\title{\textbf{Abstract} \\ \large \textbf{College Bus Surveillance using Computer Vision}}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\vspace{-3.5cm}
+\section*{a) Problem Statement}
+Ensuring student safety and accurate bus attendance remains a challenge for institutions. Manual roll-calls and paper logs are slow, error-prone, and lack real-time visibility. RFID/card-tap systems can fail when students forget cards and involve additional hardware, making them unreliable and costly. A fully automated, low-cost, real-time monitoring solution is required.
+
+\section*{b) Solution Approach}
+The proposed system offers an intelligent college bus monitoring solution using mobile-based computer vision, GPS tracking, and centralized cloud storage. No specialized hardware such as Raspberry Pi or edge devices is required; instead, modern smartphones serve as the processing unit. The system includes:  
+1) Centralized student database and web dashboard,  
+2) Master mobile app for face recognition,  
+3) Real-time GPS logging and attendance tracking.
+
+\section*{c) Technologies Used}
+Frontend: Flutter. Backend: Python Flask.  
+Firestore stores student data, embeddings, GPS logs, and attendance.  
+Face detection uses Google ML Kit; recognition uses TensorFlow Lite.  
+Additional integrations: camera processing, Google Maps SDK, Directions API, Geolocation API, and OpenStreetMap for route visualization.
+
+\section*{d) Base Paper Details}
+
+\subsection*{Base Paper 1}
+\textbf{“Bus Attendance System Through Facial Recognition by Implementing AI Integration”}  
+Authors: Johnson C, Karthick M, Sakthivel P, Sasikala K, Santhi A  
+Published: 2023, \textit{IJRPR}, Vol. 8, Issue 11  
+Link: \href{https://www.ijnrd.org/papers/IJNRD2311385.pdf}{IJRPR}
+
+\subsection*{Base Paper 2}
+\textbf{“Smart College Bus Tracker: Real-Time Location and ETA Predictor”}  
+Authors: M. Sowndharya, Yuvaraj K, Rahul S, Srichandiran S, Sriram S  
+Published: 2025, \textit{IJSRED}, Vol. 8, Issue 3  
+DOI: IJSRED-V8I3P68  
+Link: \href{https://ijsred.com/volume8/issue3/IJSRED-V8I3P68.pdf}{IJSRED}
+
+\section*{e) Group No. \& Team Members}
+\textbf{Group No: 6}
+\begin{itemize}
+    \item Akash V G – 8
+    \item Fidha Fathima A – 32
+    \item Mohammed Ramshad T S – 44
+    \item Nithya Manoj – 47
+\end{itemize}
+
+\section*{f) Time Schedule}
+
+% smaller font inside longtable to save space
+{\small
+\begin{longtable}{|c|p{10cm}|}
+\hline
+\textbf{Week} & \textbf{Work to be Completed} \\ \hline
+
+Week 1 & Requirement analysis, scope finalization, architecture diagram, module identification, UI wireframing. \\ \hline
+
+Week 2 & DFD/ER diagrams, Flask backend setup, Firestore structure, authentication, REST API development. \\ \hline
+
+Week 3 & Web dashboard: admin login, student management, bus assignment, attendance logs, map setup. \\ \hline
+
+Week 4 & Flutter app: camera preview, ML Kit detection, UI (login, camera, bus selection). \\ \hline
+
+Week 5 & TensorFlow Lite recognition: embedding extraction, comparison, threshold tuning, accuracy tests. \\ \hline
+
+Week 6 & Attendance workflow: GPS + timestamp logs, duplicate prevention, offline sync. \\ \hline
+
+Week 7 & Real-time GPS tracking, Firestore updates, route plotting, Google Maps/OSM integration. \\ \hline
+
+Week 8 & System integration and testing, low-light evaluation, network failure handling, optimization. \\ \hline
+
+Week 9 & Security, UI polishing, performance tuning, admin filters, export features. \\ \hline
+
+Week 10 & LaTeX report preparation. \\ \hline
+\end{longtable}
+}
+\end{document}

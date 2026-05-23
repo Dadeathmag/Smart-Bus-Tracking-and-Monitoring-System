@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Add Student</h2>
+
+<form method="POST" 
+action="/admin/students/add" 
+enctype="multipart/form-data"
+class="form-card">
+
+    <label>Full Name</label>
+    <input type="text" name="name" required>
+
+    <label>Admission Number</label>
+    <input type="text" name="admission_number" required>
+
+    <select name="bus_id" id="busSelect" onchange="loadStops()" required>
+        <option value="">-- Select Bus --</option>
+    </select>
+
+    <input type="hidden" name="bus_no" id="busNumberInput">
+    <h3>Transport Routes</h3>
+
+    <p id="totalFee">Total Fee: ₹0</p>
+    <!-- MORNING -->
+    <label>
+        <input type="checkbox" id="morningCheck" onchange="toggleRoute('morning')">
+        Morning Route
+    </label>
+
+    <select name="morning_stop" id="morningStop" onchange="updateTotal()" disabled>
+        <option value="">Select Morning Stop</option>
+    </select>
+
+    <br><br>
+
+    <!-- EVENING -->
+    <label>
+        <input type="checkbox" id="eveningCheck" onchange="toggleRoute('evening')">
+        Evening Route
+    </label>
+
+    <select name="evening_stop" id="eveningStop" onchange="updateTotal()" disabled>
+        <option value="">Select Evening Stop</option>
+    </select>
+
+    <label>Student Phone Number</label>
+    <input type="text" name="phone_number">
+
+    <label>Parent Phone Number</label>
+    <input type="text" name="parent_phone_number">
+
+    <hr>
+
+    <!-- STUDENT LOGIN -->
+    <h3>Student Login</h3>
+
+    <label>Student Email</label>
+    <input type="email" name="student_email" required>
+
+    <label>Student Password</label>
+    <input type="password" name="student_password" required>
+
+    <!-- PARENT LOGIN -->
+    <h3>Parent Login</h3>
+
+    <label>Parent Email</label>
+    <input type="email" name="parent_email" required>
+
+    <label>Parent Password</label>
+    <input type="password" name="parent_password" required>
+
+    <hr>
+
+    <label>Student Photo</label>
+
+    <div class="photo-toggle">
+        <button type="button" onclick="showUpload()">📁 Upload</button>
+        <button type="button" onclick="showCamera()">📷 Take Photo</button>
+    </div>
+
+    <!-- Upload Section -->
+    <div id="uploadSection">
+        <input type="file" name="photo" id="uploadInput" accept="image/*">
+    </div>
+
+    <!-- Camera Section -->
+    <div id="cameraSection" style="display:none;">
+        <video id="video" width="250" autoplay></video>
+        <br>
+        <button type="button" onclick="capturePhoto()">Capture</button>
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <input type="file" name="photo" id="fileFromCamera" style="display:none;">
+    </div>
+
+    <button type="submit">Add Student</button>
+
+</form>
+
+{% block scripts %}
+<script>
+let currentStream = null;
+
+function showUpload() {
+    document.getElementById("uploadSection").style.display = "block";
+    document.getElementById("cameraSection").style.display = "none";
+
+    document.getElementById("fileFromCamera").value = "";
+    stopCamera();
+}
+
+function showCamera() {
+    document.getElementById("uploadSection").style.display = "none";
+    document.getElementById("cameraSection").style.display = "block";
+
+    document.getElementById("uploadInput").value = "";
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Camera not supported by your browser.");
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "user" } } })
+        .then(stream => {
+            currentStream = stream;
+            document.getElementById("video").srcObject = stream;
+        })
+        .catch(err => {
+            alert("Camera access failed: " + err.message);
+        });
+}
+
+function capturePhoto() {
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    canvas.toBlob(blob => {
+        const fileInput = document.getElementById("fileFromCamera");
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(new File([blob], "captured.png", { type: "image/png" }));
+        fileInput.files = dataTransfer.files;
+
+        alert("Photo captured!");
+        stopCamera();
+    }, "image/png");
+}
+
+function stopCamera() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
+}
+</script>
+
+<script>
+let buses = [];
+
+window.onload = loadBuses;
+
+const busSelect = document.getElementById("busSelect");
+busSelect.disabled = true;
+
+async function loadBuses() {
+    try {
+        const res = await fetch("/api/buses");
+        buses = await res.json();
+
+        buses.forEach(bus => {
+            const opt = document.createElement("option");
+
+            opt.value = bus.id; // ✅ bus_id
+            opt.textContent = `${bus.bus_number} - ${bus.name}`;
+
+            opt.dataset.number = bus.bus_number; // ✅ store bus_number
+
+            busSelect.appendChild(opt);
+        });
+
+        busSelect.disabled = false; // ✅ enable after load
+
+    } catch (err) {
+        console.error("Error loading buses:", err);
+    }
+}
+
+function loadStops() {
+    const busId = document.getElementById("busSelect").value;
+
+    console.log("Selected Bus ID:", busId);
+
+    const bus = buses.find(b => String(b.id) === String(busId));
+
+    console.log("Matched Bus:", bus);
+
+    if (!bus) return;
+
+    const morningSelect = document.getElementById("morningStop");
+    const eveningSelect = document.getElementById("eveningStop");
+
+    morningSelect.innerHTML = '<option value="">Select Morning Stop</option>';
+    eveningSelect.innerHTML = '<option value="">Select Evening Stop</option>';
+
+    // ✅ Morning
+    if (bus.routes && bus.routes.morning && bus.routes.morning.stops) {
+        bus.routes.morning.stops.forEach(stop => {
+            const opt = document.createElement("option");
+            opt.value = stop.name;
+            opt.textContent = `${stop.name} (₹${stop.fee})`;
+            morningSelect.appendChild(opt);
+        });
+    }
+
+    // ✅ Evening
+    if (bus.routes && bus.routes.evening && bus.routes.evening.stops) {
+        bus.routes.evening.stops.forEach(stop => {
+            const opt = document.createElement("option");
+            opt.value = stop.name;
+            opt.textContent = `${stop.name} (₹${stop.fee})`;
+            eveningSelect.appendChild(opt);
+        });
+    }
+}
+</script>
+
+<script>
+function updateTotal() {
+    let total = 0;
+
+    document.querySelectorAll("#morningStop, #eveningStop").forEach(sel => {
+        let text = sel.options[sel.selectedIndex]?.text || "";
+        let match = text.match(/₹(\d+)/);
+        if (match) total += parseInt(match[1]);
+    });
+
+    document.getElementById("totalFee").innerText = "Total Fee: ₹" + total;
+}
+
+function toggleRoute(type) {
+    const checkbox = document.getElementById(type + "Check");
+    const select = document.getElementById(type + "Stop");
+
+    select.disabled = !checkbox.checked;
+
+    if (!checkbox.checked) {
+        select.value = "";
+    }
+
+    loadStops();   // ✅ important
+    updateTotal();
+}
+
+document.getElementById("busSelect").addEventListener("change", function () {
+    const selectedOption = this.options[this.selectedIndex];
+
+    const busNumber = selectedOption.dataset.number || "";
+
+    document.getElementById("busNumberInput").value = busNumber;
+});
+</script>
+{% endblock %}
+
+{% endblock %}

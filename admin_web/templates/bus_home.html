@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Bus Module</h2>
+
+<div class="card-container">
+
+    <a href="/admin/buses/add-bus" class="module-card-bu-home">
+        <div class="card-icon">➕</div>
+        <h3>Add Bus</h3>
+        <p>Create a new bus and assign routes</p>
+    </a>
+
+    <a href="/admin/buses/manage" class="module-card-bu-home">
+        <div class="card-icon">📋</div>
+        <h3>Manage Buses</h3>
+        <p>View, edit, delete existing buses</p>
+    </a>
+
+    <a href="/admin/buses/drivers" class="module-card-bu-home">
+        <div class="card-icon">👨‍✈️</div>
+        <h3>Manage Drivers</h3>
+        <p>Add, list, and delete drivers</p>
+    </a>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Manage Drivers</h2>
+
+<div class="detail-card" style="margin-bottom: 18px;">
+    <h3>➕ Add New Driver</h3>
+
+    <div class="form-group">
+        <label>Driver Name</label>
+        <input type="text" id="driverName" class="input" placeholder="Driver Name" required>
+    </div>
+
+    <div class="form-group">
+        <label>Driver Phone</label>
+        <input type="text" id="driverPhone" class="input" placeholder="Phone Number" required>
+    </div>
+
+    <div class="form-group">
+        <label>Driver Email</label>
+        <input type="email" id="driverEmail" class="input" placeholder="Email" required>
+    </div>
+
+    <div class="form-group">
+        <label>Driver Password</label>
+        <input type="password" id="driverPassword" class="input" placeholder="Password" required>
+    </div>
+
+    <button class="primary-btn" onclick="addDriverFromPage()">Add Driver</button>
+</div>
+
+<table class="bus-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Assigned Bus</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="driversTableBody">
+        <tr>
+            <td colspan="6">Loading...</td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function renderDrivers(drivers) {
+        const tbody = document.getElementById("driversTableBody");
+        if (!tbody) return;
+
+        if (!drivers || drivers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6">No drivers found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = drivers.map(d => `
+            <tr>
+                <td>${d.name || ""}</td>
+                <td>${d.phone || ""}</td>
+                <td>${d.email || ""}</td>
+                <td>${d.status || ""}</td>
+                <td>${d.assigned_bus_number || ""}</td>
+                <td>
+                    ${d.assigned_bus_id ? `
+                        <button class="delete-btn"
+                                onclick="unassignDriverFromBus('${d.assigned_bus_id}')"
+                                style="cursor:pointer; margin-right: 8px;">
+                            Unassign
+                        </button>
+                    ` : ``}
+                    <button class="delete-btn"
+                            onclick="deleteDriver('${d.id}')"
+                            style="cursor:pointer;">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function loadDrivers() {
+        fetch("/admin/drivers/list-all")
+            .then(res => res.json())
+            .then(drivers => renderDrivers(drivers))
+            .catch(err => {
+                console.error("Error loading drivers:", err);
+                const tbody = document.getElementById("driversTableBody");
+                if (tbody) tbody.innerHTML = `<tr><td colspan="6">Failed to load drivers.</td></tr>`;
+            });
+    }
+
+    function addDriverFromPage() {
+        const name = document.getElementById("driverName").value;
+        const phone = document.getElementById("driverPhone").value;
+        const email = document.getElementById("driverEmail").value;
+        const password = document.getElementById("driverPassword").value;
+
+        if (!name || !phone || !email || !password) {
+            alert("Please fill all fields.");
+            return;
+        }
+
+        fetch("/admin/drivers/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, phone, email, password })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            alert(data.message || "Driver added successfully");
+            loadDrivers();
+        })
+        .catch(err => {
+            console.error("Error adding driver:", err);
+            alert("Failed to add driver.");
+        });
+    }
+
+    function deleteDriver(driverId) {
+        if (!confirm("Delete this driver?")) return;
+
+        fetch(`/admin/drivers/delete/${driverId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            alert(data.message || "Driver deleted successfully");
+            loadDrivers();
+        })
+        .catch(err => {
+            console.error("Error deleting driver:", err);
+            alert("Failed to delete driver.");
+        });
+    }
+
+    function unassignDriverFromBus(busId) {
+        if (!busId) return;
+        fetch(`/admin/buses/manage/${busId}/unassign-driver`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            alert(data.message || "Driver unassigned successfully");
+            loadDrivers();
+        })
+        .catch(err => {
+            console.error("Error unassigning driver:", err);
+            alert("Failed to unassign driver.");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadDrivers();
+    });
+</script>
+{% endblock %}
+

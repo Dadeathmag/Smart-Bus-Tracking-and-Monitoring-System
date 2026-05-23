@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Dashboard</h2>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Total Buses</h3>
+        <p>{{ total_buses }}</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Total Students</h3>
+        <p>{{ total_students }}</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Today's Attendance</h3>
+        <p>{{ today_attendance }}</p>
+    </div>
+</div>
+
+<h3>Live Bus Location</h3>
+
+<div class="live-bus-controls">
+    <div class="form-row">
+        <label for="liveBusSelect">Select Bus</label>
+        <select id="liveBusSelect">
+            <option value="">Loading buses...</option>
+        </select>
+    </div>
+    <div id="trackingStatus" class="muted">
+        Choose a bus to view its latest RTDB tracking location.
+    </div>
+</div>
+
+<!-- Used by JS to center the map (config/college_location) -->
+<div id="collegeLocation"
+     data-lat="{{ college_lat }}"
+     data-lng="{{ college_lng }}"
+     style="display:none;"></div>
+
+<div id="map"></div>
+
+<h3>Live Students (On Bus)</h3>
+<div id="attendancePanel" class="muted students-panel">
+    No bus selected yet.
+</div>
+
+<script>
+    let map = null;
+    let marker = null;
+    let trackingInterval = null;
+
+    const busPointerIcon = L.divIcon({
+        className: "bus-pointer-icon",
+        html: `<div class="bus-pointer-shape"></div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+        popupAnchor: [0, -10],
+    });
+
+    function setStatus(text) {
+        const el = document.getElementById("trackingStatus");
+        if (el) el.textContent = text;
+    }
+
+    function safeNumber(v) {
+        const n = typeof v === "string" ? parseFloat(v) : v;
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function renderTracking({ latitude, longitude, speed, last_updated }, labelText) {
+        const lat = safeNumber(latitude);
+        const lng = safeNumber(longitude);
+
+        if (lat === 0 || lng === 0) {
+            setStatus("No location yet for the selected bus.");
+            return;
+        }
+
+        const latlng = [lat, lng];
+
+        if (marker) {
+            marker.setLatLng(latlng);
+        } else {
+            // Create marker once with a pointer-style icon; then only move it.
+            marker = L.marker(latlng, { icon: busPointerIcon }).addTo(map);
+        }
+
+        const speedText = speed ? ` | Speed: ${speed}` : "";
+        const updatedText = last_updated ? ` | Updated: ${last_updated}` : "";
+        const popupText = `${labelText}${speedText}${updatedText}`;
+
+        marker.bindPopup(popupText).openPopup();
+        map.setView(latlng, 15);
+    }
+
+    function valueLooksPresent(value) {
+        if (value === null || value === undefined) return false;
+        if (typeof value === "boolean") return value;
+        if (typeof value === "number") return value === 1;
+        if (typeof value === "string") {
+            const s = value.trim().toLowerCase();
+            return ["present", "on", "true", "yes", "1", "active"].includes(s);
+        }
+
+        if (typeof value === "object") {
+            if ("is_present" in value) return Boolean(value.is_present);
+            if ("present" in value) return Boolean(value.present);
+            if ("marked" in value) return Boolean(value.marked);
+            if ("attendance_status" in value) {
+                const s = String(value.attendance_status).trim().toLowerCase();
+                return ["present", "on", "true", "yes", "1"].includes(s);
+            }
+            if ("status" in value) {
+                const s = String(value.status).trim().toLowerCase();
+                return !s.includes("absent") && !s.includes("not") && s !== "";
+            }
+        }
+
+        // Unknown shape: keep it rather than hiding everything.
+        return true;
+    }
+
+    function renderAttendance(attendance) {
+        const panel = document.getElementById("attendancePanel");
+        if (!panel) return;
+
+        if (!attendance || (typeof attendance === "object" && Object.keys(attendance).length === 0)) {
+            panel.innerHTML = "No students marked yet.";
+            return;
+        }
+
+        const entries = Array.isArray(attendance)
+            ? attendance.map((v, i) => [String(i), v])
+            : Object.entries(attendance);
+
+        const rows = entries
+            .filter(([, v]) => valueLooksPresent(v))
+            .slice(0, 200)
+            .map(([key, v]) => {
+                const value = v && typeof v === "object" ? v : {};
+                const name =
+                    value.name ||
+                    value.student_name ||
+                    value.studentName ||
+                    value.studentId ||
+                    value.student_id ||
+                    key;
+
+                const status =
+                    value.status ||
+                    value.attendance_status ||
+                    value.state ||
+                    value.marked ||
+                    value.is_present ||
+                    "";
+
+                const time =
+                    value.time ||
+                    value.timestamp ||
+                    value.last_updated ||
+                    value.lastUpdated ||
+                    "";
+
+                const statusText = status !== "" ? ` - ${String(status)}` : "";
+                const timeText = time !== "" ? ` (${String(time)})` : "";
+
+                return `<div style="padding: 8px 10px; background: rgba(255,255,255,0.75); border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;">
+                    <div style="font-weight: 600;">${String(name)}</div>
+                    <div style="font-size: 13px; opacity: 0.8;">${statusText}${timeText}</div>
+                </div>`;
+            })
+            .join("");
+
+        panel.innerHTML = rows;
+    }
+
+    async function fetchTracking(busId) {
+        const res = await fetch(`/api/buses/${busId}/tracking`);
+        if (!res.ok) {
+            throw new Error(`Failed to load tracking for bus ${busId}`);
+        }
+        return res.json();
+    }
+
+    async function updateSelectedBusTracking(busId, labelText) {
+        try {
+            const tracking = await fetchTracking(busId);
+            renderTracking(
+                tracking,
+                labelText
+            );
+            renderAttendance(tracking.attendance);
+            setStatus("Live tracking is updating...");
+        } catch (err) {
+            console.error(err);
+            setStatus("Failed to load tracking data. Please try again.");
+        }
+    }
+
+    async function loadBuses() {
+        const select = document.getElementById("liveBusSelect");
+        const loadingOpt = select.querySelector("option");
+        setStatus("Loading buses...");
+
+        const res = await fetch("/api/buses");
+        const buses = await res.json();
+
+        // Clear options
+        select.innerHTML = '<option value="">-- Select a bus --</option>';
+
+        buses.forEach(bus => {
+            const opt = document.createElement("option");
+            opt.value = bus.id;
+            opt.textContent = `${bus.bus_number} - ${bus.name}`;
+            opt.dataset.busNumber = bus.bus_number;
+            opt.dataset.busName = bus.name;
+            select.appendChild(opt);
+        });
+
+        setStatus("Select a bus to view its location.");
+
+        // Auto-select first bus (optional)
+        if (buses.length > 0) {
+            select.value = buses[0].id;
+            select.dispatchEvent(new Event("change"));
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const collegeLocationEl = document.getElementById("collegeLocation");
+        const collegeLat = collegeLocationEl ? parseFloat(collegeLocationEl.dataset.lat) : 12.9716;
+        const collegeLng = collegeLocationEl ? parseFloat(collegeLocationEl.dataset.lng) : 77.5946;
+
+        const safeCollegeLat = Number.isFinite(collegeLat) ? collegeLat : 12.9716;
+        const safeCollegeLng = Number.isFinite(collegeLng) ? collegeLng : 77.5946;
+
+        map = L.map("map").setView([safeCollegeLat, safeCollegeLng], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap"
+        }).addTo(map);
+
+        // Mark configured college location for reference.
+        L.circleMarker([safeCollegeLat, safeCollegeLng], {
+            radius: 10,
+            color: "#16a34a",
+            fillColor: "#16a34a",
+            fillOpacity: 0.25,
+            weight: 2,
+        })
+            .addTo(map)
+            .bindPopup("College");
+
+        loadBuses();
+
+        const select = document.getElementById("liveBusSelect");
+        select.addEventListener("change", async function () {
+            const busId = select.value;
+
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
+                trackingInterval = null;
+            }
+
+            marker = null;
+            if (!busId) {
+                map.setView([safeCollegeLat, safeCollegeLng], 13);
+                setStatus("Choose a bus to view its latest RTDB tracking location.");
+                const panel = document.getElementById("attendancePanel");
+                if (panel) panel.innerHTML = "No bus selected yet.";
+                return;
+            }
+
+            const selectedOption = select.options[select.selectedIndex];
+            const busNumber = selectedOption?.dataset?.busNumber || "";
+            const busName = selectedOption?.dataset?.busName || "";
+            const labelText = `${busNumber}${busName ? " - " + busName : ""}`;
+
+            setStatus("Fetching live tracking...");
+            await updateSelectedBusTracking(busId, labelText);
+
+            // Refresh every 5 seconds for "live" updates.
+            trackingInterval = setInterval(() => {
+                updateSelectedBusTracking(busId, labelText);
+            }, 5000);
+        });
+    });
+</script>
+
+{% endblock %}

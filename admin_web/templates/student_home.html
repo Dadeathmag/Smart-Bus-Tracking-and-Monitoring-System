@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Student Module</h2>
+
+<div class="card-container">
+
+    <a href="/admin/students/add-student" class="module-card-stu-home">
+        <div class="card-icon">➕</div>
+        <h3>Add Student</h3>
+        <p>Create a new student</p>
+    </a>
+
+    <a href="/admin/students/manage" class="module-card-stu-home">
+        <div class="card-icon">📋</div>
+        <h3>Manage students</h3>
+        <p>View, edit, delete existing students</p>
+    </a>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,147 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Manage Student</h2>
+
+<div class="main-container" style="display: flex; gap: 20px;">
+    <div class="detail-card" style="flex: 1;">
+
+        <h3>Student Information</h3>
+
+        <div style="text-align:center; margin-bottom:20px;">
+            {% if student.photoBase64 %}
+            <img src="{{ student.photoBase64 }}" width="120" height="120"
+                style="border-radius:50%; object-fit:cover; margin-bottom:10px;">
+            {% else %}
+            <div style="width:120px;height:120px;border-radius:50%;background:#ddd;display:inline-flex;
+                        align-items:center;justify-content:center;font-size:12px;color:#888;margin-bottom:10px;">
+                No Photo
+            </div>
+            {% endif %}
+
+            <!-- Unified Update Form -->
+            <form method="POST" action="/admin/students/update/{{ student_id }}" enctype="multipart/form-data"
+                style="margin-top:8px;">
+                <input type="file" name="photo" accept="image/*" style="font-size:12px; margin-bottom:6px;">
+                <div style="font-size:11px; color:#888; margin-bottom:15px;">Leave empty to keep existing photo</div>
+        </div>
+
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" value="{{ student.name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Admission Number</label>
+            <input type="text" name="admission_number" value="{{ student.rollNumber or student.admission_number }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>Parent Email</label>
+            <input type="text" name="parent_email" value="{{ student.parentEmail }}" required disabled
+                title="Email cannot be changed after registration">
+        </div>
+
+        <div class="form-group">
+            <label>Assigned Bus</label>
+            <select name="bus_no" required>
+                <option value="">-- Select a Bus --</option>
+                {% for bus in available_buses %}
+                <option value="{{ bus.bus_number }}" {% if student and student.bus_no==bus.bus_number %}selected{% endif
+                    %}>
+                    Bus {{ bus.bus_number }} - {{ bus.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Parent Phone</label>
+            <input type="text" name="parent_phone_number" value="{{ student.parent_phone_number or '' }}">
+        </div>
+
+        <div class="form-group">
+            <label>Status</label>
+            <span class="status-badge {{ student.status }}">
+                {{ student.status }}
+            </span>
+        </div>
+
+        <div class="form-group">
+            <label>Status</label>
+            <select name="status" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                <option value="active" {% if student.status=='active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if student.status=='inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <button type="submit"
+            style="width:100%; padding:10px; background:#4CAF50; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px;">
+            Update Student Details
+        </button>
+        </form>
+
+    </div>
+
+    <div class="detail-card" style="flex: 1;">
+        <h4 style="margin-bottom:10px;">Fee History (newest first)</h4>
+
+        {% if fees %}
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr style="background:#f0f0f0; text-align:left;">
+                        <th style="padding:8px 10px;">Amount</th>
+                        <th style="padding:8px 10px;">Due Date</th>
+                        <th style="padding:8px 10px;">Status</th>
+                        <th style="padding:8px 10px;">Paid At</th>
+                        <th style="padding:8px 10px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in fees %}
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:8px 10px;">₹{{ fee.amount }}</td>
+                        <td style="padding:8px 10px;">{{ fee.dueDate }}</td>
+                        <td style="padding:8px 10px;">
+                            {% if fee.status == 'paid' %}
+                            <span style="background:#e8f5e9; color:#2e7d32; padding:3px 10px;
+                                         border-radius:12px; font-size:12px; font-weight:600;">✔ Paid</span>
+                            {% else %}
+                            <span style="background:#fff3e0; color:#e65100; padding:3px 10px;
+                                         border-radius:12px; font-size:12px; font-weight:600;">⏳ Pending</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:8px 10px; font-size:12px; color:#666;">
+                            {% if fee.paidAt %}
+                            {{ fee.paidAt.strftime('%d %b %Y, %H:%M') if fee.paidAt else '—' }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td style="padding:8px 10px;">
+                            {% if fee.status == 'pending' %}
+                            <form method="POST" action="/admin/students/mark_fee_paid/{{ fee.id }}"
+                                onsubmit="return confirm('Mark this fee as paid?')">
+                                <button type="submit" style="padding:4px 12px; background:#4CAF50; color:white;
+                                               border:none; border-radius:5px; font-size:12px; cursor:pointer;">
+                                    Mark as Paid
+                                </button>
+                            </form>
+                            {% else %}
+                            <span style="color:#bbb; font-size:12px;">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:#999; font-size:13px;">No fees created yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

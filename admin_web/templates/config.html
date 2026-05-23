@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Settings</h2>
+
+
+
+<h3>Set College Location</h3>
+
+<form method="POST">
+
+    <label>College Name</label>
+    <input type="text" name="name" value="{{ college.name if college else '' }}" required>
+
+    <!-- Hidden inputs -->
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+    
+    <!-- Map -->
+    <div id="map" style="height: 400px; margin-top: 10px;"></div>
+
+    <p id="coords">Click on map to select location</p>
+
+    <button type="submit">Save Location</button>
+
+</form>
+
+{% block scripts %}
+<script>
+    let map = L.map('map').setView([10.8505, 76.2711], 7); // Kerala default
+
+    // OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let marker;
+        
+    document.addEventListener("DOMContentLoaded", function () {
+        loadCollegeLocation();
+    });
+
+    // Click event
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Update hidden inputs
+        document.getElementById("latitude").value = lat;
+        document.getElementById("longitude").value = lng;
+
+        // Show coordinates
+        document.getElementById("coords").innerText = 
+            `Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+        // Move marker
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+    });
+
+async function loadCollegeLocation() {
+    try {
+        const res = await fetch("/api/college-location");
+        const data = await res.json();
+
+        console.log("College location:", data);
+
+        if (!data.latitude || !data.longitude) return;
+
+        const lat = data.latitude;
+        const lng = data.longitude;
+
+        // Move map
+        map.setView([lat, lng], 15);
+
+        // Add marker
+        marker = L.marker([lat, lng]).addTo(map);
+
+        // Fill hidden inputs
+        document.getElementById("latitude").value = lat;
+        document.getElementById("longitude").value = lng;
+
+        // Show text
+        document.getElementById("coords").innerText =
+            `Selected: ${lat}, ${lng}`;
+
+    } catch (err) {
+        console.error("Error loading location:", err);
+    }
+}
+
+</script>
+{% endblock %}
+
+{% endblock %}
