@@ -33,6 +33,14 @@ Manual roll calls and paper logs are slow and error-prone. This project automate
 | `design/` | System design diagrams, DFD, ER, architecture (LaTeX + PDF) |
 | `litreature review/` | Literature review (LaTeX + PDF) |
 | `zeroth review/` | Zeroth review presentation (LaTeX + PDF) |
+| `final/` | Final submission deliverables (group report + presentation) |
+
+### Final deliverables (`final/`)
+
+| File | Description |
+|------|-------------|
+| [`group_report.pdf`](final/group_report.pdf) | Complete group project report |
+| [`pres_final.pdf`](final/pres_final.pdf) | Final presentation slides |
 
 ## Tech stack
 
@@ -97,6 +105,9 @@ project/
 │   └── serviceKey.json.example
 ├── abstract/
 ├── design/
+├── final/                  # Final report and presentation (PDF)
+│   ├── group_report.pdf
+│   └── pres_final.pdf
 ├── litreature review/
 └── zeroth review/
 ```
