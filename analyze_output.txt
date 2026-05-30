@@ -1,0 +1,19 @@
+Analyzing faceapp...                                            
+
+warning - The value of the local variable 'size' isn't used - lib\screens\driver\driver_scanner_screen.dart:282:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\driver\driver_scanner_screen.dart:325:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\driver\driver_scanner_screen.dart:329:41 - deprecated_member_use
+  error - Expected to find ';' - lib\screens\student\student_history_screen.dart:34:19 - expected_token
+  error - Expected to find ';' - lib\screens\student\student_history_screen.dart:34:68 - expected_token
+  error - Expected to find ';' - lib\screens\student\student_history_screen.dart:34:69 - expected_token
+  error - Expected to find ';' - lib\screens\student\student_history_screen.dart:34:123 - expected_token
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\student\student_history_screen.dart:50:43 - deprecated_member_use
+warning - Unused import: 'package:flutter/services.dart' - lib\services\face_recognition_service.dart:2:8 - unused_import
+   info - Don't invoke 'print' in production code - lib\services\face_recognition_service.dart:17:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\face_recognition_service.dart:19:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\face_recognition_service.dart:20:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\face_recognition_service.dart:28:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\face_recognition_service.dart:63:7 - avoid_print
+  error - The name 'MyApp' isn't a class - test\widget_test.dart:16:35 - creation_with_non_type
+
+15 issues found. (ran in 7.2s)
