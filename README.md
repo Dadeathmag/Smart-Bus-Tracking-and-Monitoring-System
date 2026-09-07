@@ -22,7 +22,7 @@ Manual roll calls and paper logs are slow and error-prone. This project automate
 | Admin web (`admin_web/`) | **Completed** | Flask dashboard, Firebase auth, buses, students, drivers, attendance, fees |
 | Design & documentation | **Completed** | Diagrams, LaTeX/PDF docs, `docs/images/`, `final/` deliverables |
 | Database (Firebase) | **Completed** | Firestore + Realtime Database schema and integration |
-| Flutter mobile app | **To be updated** | Driver face recognition & GPS app — planned, not in this repo yet |
+| Flutter mobile app | **Completed** | Driver face recognition & GPS app — planned, not in this repo yet |
 
 ## Features
 
